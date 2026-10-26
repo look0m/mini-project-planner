@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Task & Mini Project Planner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            100: '#e5edff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Kanit', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font - Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand Logo & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-500/20">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">Student Task & Mini Project Planner</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">ระบบจัดการมินิโปรเจกต์และวางแผนการเรียน</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Theme Toggle Button -->
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" class="p-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition" title="สลับโหมด สว่าง/มืด">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+
+                <!-- Submission Helper Modal Button -->
+                <button onclick="openSubmissionInfoModal()" class="flex items-center space-x-1.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span class="hidden sm:inline">เตรียมข้อมูลส่งงาน</span>
+                </button>
+
+                <!-- Add Task Button -->
+                <button onclick="openTaskModal()" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium shadow-md shadow-indigo-500/20 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">เพิ่มงานใหม่</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Welcome Banner Section -->
+        <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 rounded-2xl p-6 text-white shadow-xl">
+            <div class="relative z-10 max-w-2xl">
+                <span class="bg-white/20 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-md">Mini Project & Task Dashboard</span>
+                <h2 class="text-2xl sm:text-3xl font-bold mt-2">วางแผน ติดตาม และส่งงานโปรเจกต์ได้อย่างมั่นใจ</h2>
+                <p class="text-indigo-100 text-xs sm:text-sm mt-1">บันทึกขั้นตอนการทำมินิโปรเจกต์ กราฟแสดงสถิติ real-time และเครื่องมือช่วยเตรียมลิงก์ส่งอาจารย์</p>
+                
+                <!-- Overall Progress Bar Container inside banner -->
+                <div class="mt-4 bg-white/10 dark:bg-black/20 p-3 rounded-xl backdrop-blur-sm max-w-lg border border-white/10">
+                    <div class="flex justify-between text-xs font-medium mb-1.5">
+                        <span>ความคืบหน้าโครงการรวม</span>
+                        <span id="bannerProgressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-black/20 rounded-full h-2.5 overflow-hidden">
+                        <div id="bannerProgressBar" class="bg-emerald-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute right-4 bottom-0 opacity-10 transform translate-x-4 translate-y-4 pointer-events-none">
+                <i class="fa-solid fa-cubes text-9xl"></i>
+            </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Total Tasks -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">งานทั้งหมด</p>
+                    <h3 id="statTotal" class="text-2xl font-bold text-slate-800 dark:text-white mt-1">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+            </div>
+
+            <!-- In Progress Tasks -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">กำลังดำเนินการ</p>
+                    <h3 id="statInProgress" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-spinner"></i>
+                </div>
+            </div>
+
+            <!-- Completed Tasks -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">เสร็จสิ้นแล้ว</p>
+                    <h3 id="statCompleted" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0</h3>
+                </div>
+                <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+
+            <!-- Overall Rate -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">อัตราความสำเร็จ</p>
+                    <h3 id="statProgress" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0%</h3>
+                </div>
+                <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Analytics Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Doughnut Chart: Task Status -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4 text-sm flex items-center justify-between">
+                    <span><i class="fa-solid fa-chart-pie mr-2 text-indigo-500"></i>สถานะของงาน</span>
+                </h3>
+                <div class="relative h-48 flex items-center justify-center">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart: Category Distribution -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm lg:col-span-2">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4 text-sm flex items-center justify-between">
+                    <span><i class="fa-solid fa-chart-column mr-2 text-indigo-500"></i>จำนวนงานแบ่งตามหมวดหมู่</span>
+                </h3>
+                <div class="relative h-48">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Management Area -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <!-- Filters Header Bar -->
+            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 space-y-3">
+                <div class="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+                    <!-- Search Box -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchInput" oninput="renderTasks()" placeholder="ค้นหางาน หรือ รายละเอียด..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+
+                    <!-- Dropdown Filters -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Filter Status -->
+                        <select id="filterStatus" onchange="renderTasks()" class="px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <option value="all">ทุกสถานะ</option>
+                            <option value="Pending">ยังไม่เริ่ม (Pending)</option>
+                            <option value="In Progress">กำลังทำ (In Progress)</option>
+                            <option value="Completed">เสร็จสิ้น (Completed)</option>
+                        </select>
+
+                        <!-- Filter Category -->
+                        <select id="filterCategory" onchange="renderTasks()" class="px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <option value="all">ทุกหมวดหมู่</option>
+                            <option value="Frontend">Frontend</option>
+                            <option value="Backend">Backend</option>
+                            <option value="UI/UX">UI/UX Design</option>
+                            <option value="Database">Database</option>
+                            <option value="Docs">เอกสารรายงาน (Docs)</option>
+                        </select>
+
+                        <!-- Filter Priority -->
+                        <select id="filterPriority" onchange="renderTasks()" class="px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <option value="all">ทุกความสำคัญ</option>
+                            <option value="High">สำคัญมาก (High)</option>
+                            <option value="Medium">ปานกลาง (Medium)</option>
+                            <option value="Low">ปกติ (Low)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Items List -->
+            <div class="divide-y divide-slate-100 dark:divide-slate-700/50" id="taskList">
+                <!-- Task items dynamically populated here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden p-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-3 bg-slate-100 dark:bg-slate-700/50 text-slate-400 rounded-full flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h4 class="font-medium text-slate-700 dark:text-slate-300">ไม่พบรายการงานที่ตรงกับเงื่อนไข</h4>
+                <p class="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือเพิ่มรายการงานใหม่</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Add / Edit Task -->
+    <div id="taskModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden my-8">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 id="modalTitle" class="font-bold text-slate-800 dark:text-white">เพิ่มงานใหม่</h3>
+                <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="taskForm" onsubmit="handleTaskFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="taskId">
+                
+                <!-- Task Title -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อหัวข้องาน *</label>
+                    <input type="text" id="taskTitle" required placeholder="เช่น ออกแบบ UI หน้า Dashboard, เขียน API" class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                </div>
+
+                <!-- Category & Priority -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">หมวดหมู่</label>
+                        <select id="taskCategory" class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <option value="Frontend">Frontend</option>
+                            <option value="Backend">Backend</option>
+                            <option value="UI/UX">UI/UX Design</option>
+                            <option value="Database">Database</option>
+                            <option value="Docs">เอกสารรายงาน (Docs)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ระดับความสำคัญ</label>
+                        <select id="taskPriority" class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <option value="High">สำคัญมาก (High)</option>
+                            <option value="Medium" selected>ปานกลาง (Medium)</option>
+                            <option value="Low">ปกติ (Low)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Status & Due Date -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">สถานะ</label>
+                        <select id="taskStatus" class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <option value="Pending">ยังไม่เริ่ม (Pending)</option>
+                            <option value="In Progress">กำลังทำ (In Progress)</option>
+                            <option value="Completed">เสร็จสิ้น (Completed)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">กำหนดส่ง (Due Date)</label>
+                        <input type="date" id="taskDueDate" class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
+                    <textarea id="taskDescription" rows="3" placeholder="ระบุรายละเอียดงาน เครื่องมือที่ใช้ หรือสิ่งที่ต้องทำ..." class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white resize-none"></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeTaskModal()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-500/20 transition">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Submission Helper (ข้อมูลส่งอาจารย์) -->
+    <div id="submissionModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden my-8">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-950/30">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-paper-plane text-indigo-600 dark:text-indigo-400"></i>
+                    <h3 class="font-bold text-slate-800 dark:text-white">สรุปข้อมูลส่งมินิโปรเจกต์ (Submission Helper)</h3>
+                </div>
+                <button onclick="closeSubmissionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    กรอกข้อมูลของคุณด้านล่าง แล้วกดปุ่มคัดลอก เพื่อนำไปกรอกลงใน Google Form ของอาจารย์ได้ทันที:
+                </p>
+
+                <!-- Editable Student Info Fields -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">รหัสนักศึกษา</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="subStudentId" value="6711501871" class="flex-1 px-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white">
+                            <button onclick="copyField('subStudentId')" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-medium dark:bg-indigo-900/30 dark:text-indigo-300">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อ-นามสกุล</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="subStudentName" placeholder="ระบุ ชื่อ-นามสกุล ของคุณ" class="flex-1 px-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white">
+                            <button onclick="copyField('subStudentName')" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-medium dark:bg-indigo-900/30 dark:text-indigo-300">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อโครงการ (App)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="subAppName" value="Student Task & Mini Project Planner" class="flex-1 px-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white">
+                            <button onclick="copyField('subAppName')" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-medium dark:bg-indigo-900/30 dark:text-indigo-300">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Link Deploy (Vercel / Netlify / GitHub Pages)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="subDeployUrl" placeholder="https://your-username.github.io/mini-project/" class="flex-1 px-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white">
+                            <button onclick="copyField('subDeployUrl')" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-medium dark:bg-indigo-900/30 dark:text-indigo-300">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast Notification Container inside Modal -->
+                <div id="copyToast" class="hidden p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs text-center font-medium">
+                    <i class="fa-solid fa-circle-check mr-1"></i> คัดลอกข้อมูลลงคลิปบอร์ดแล้ว!
+                </div>
+
+                <!-- Export / Import & Reset Data -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex flex-wrap justify-between items-center gap-2">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportDataJSON()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-medium">
+                            <i class="fa-solid fa-download"></i> Export JSON
+                        </button>
+                        <span class="text-slate-300 dark:text-slate-600">|</span>
+                        <label class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-medium cursor-pointer">
+                            <i class="fa-solid fa-upload"></i> Import JSON
+                            <input type="file" id="importJsonInput" accept=".json" onchange="importDataJSON(event)" class="hidden">
+                        </label>
+                    </div>
+                    <button onclick="resetDataToDefault()" class="text-xs text-rose-500 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right"></i> รีเซ็ตข้อมูลตัวอย่าง
+                    </button>
+                </div>
+            </div>
+
+            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 text-right">
+                <button onclick="closeSubmissionModal()" class="px-4 py-2 text-sm font-medium bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl text-slate-700 dark:text-slate-200 transition">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Message Notification -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 text-sm transition-all duration-300">
+        <i id="toastIcon" class="fa-solid fa-circle-info text-indigo-400"></i>
+        <span id="toastMessage">แจ้งเตือน</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 dark:text-slate-400">
+            <p>Student Task & Mini Project Planner Dashboard &copy; 2026. Built with HTML5, Tailwind CSS, & Chart.js</p>
+        </div>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        // Default Initial Mock Data
+        const initialTasks = [
+            { id: '1', title: 'วางโครงสร้าง UI และ Responsive Layout', category: 'UI/UX', priority: 'High', status: 'Completed', dueDate: '2026-10-25', description: 'ใช้องค์ประกอบสีสันสวยงาม รองรับ Responsive ทั้ง mobile และ desktop' },
+            { id: '2', title: 'ออกแบบฐานข้อมูล และ RESTful API Spec', category: 'Backend', priority: 'High', status: 'In Progress', dueDate: '2026-10-28', description: 'กำหนดโครงสร้างข้อมูลสำหรับ Task, User และ Project Status' },
+            { id: '3', title: 'ทำกราฟสรุปสถิติด้วย Chart.js', category: 'Frontend', priority: 'Medium', status: 'Completed', dueDate: '2026-10-26', description: 'แสดงกราฟสถานะงานและกราฟการแบ่งหมวดหมู่' },
+            { id: '4', title: 'จัดทำเล่มรายงานและสไลด์นำเสนอ', category: 'Docs', priority: 'Medium', status: 'Pending', dueDate: '2026-11-02', description: 'สรุปความเป็นมา วัตถุประสงค์ ผลการดำเนินงาน และลิงก์ทดสอบแอปพลิเคชัน' },
+            { id: '5', title: 'ทดสอบ Deploy ระบบบน GitHub Pages / Vercel', category: 'Frontend', priority: 'High', status: 'In Progress', dueDate: '2026-10-29', description: 'ตรวจสอบความถูกต้องของระบบและส่งลิงก์ให้อาจารย์' }
+        ];
+
+        let tasks = [];
+        let statusChartInstance = null;
+        let categoryChartInstance = null;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            loadTasks();
+            initCharts();
+            renderDashboard();
+            renderTasks();
+        });
+
+        // Load tasks from LocalStorage
+        function loadTasks() {
+            const saved = localStorage.getItem('student_planner_tasks');
+            if (saved) {
+                try {
+                    tasks = JSON.parse(saved);
+                } catch (e) {
+                    tasks = [...initialTasks];
+                }
+            } else {
+                tasks = [...initialTasks];
+                saveTasks();
+            }
+        }
+
+        // Save tasks to LocalStorage
+        function saveTasks() {
+            localStorage.setItem('student_planner_tasks', JSON.stringify(tasks));
+            renderDashboard();
+        }
+
+        // Dark Mode Logic
+        function initDarkMode() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-amber-400 text-lg';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-slate-600 dark:text-slate-300 text-lg';
+            }
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-slate-600 text-lg';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-amber-400 text-lg';
+            }
+            updateChartsTheme();
+        }
+
+        // Render Dashboard Stats and Charts
+        function renderDashboard() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.status === 'Completed').length;
+            const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+            const pending = tasks.filter(t => t.status === 'Pending').length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statInProgress').innerText = inProgress;
+            document.getElementById('statCompleted').innerText = completed;
+            document.getElementById('statProgress').innerText = `${percent}%`;
+            document.getElementById('bannerProgressPercent').innerText = `${percent}%`;
+            document.getElementById('bannerProgressBar').style.width = `${percent}%`;
+
+            updateCharts(pending, inProgress, completed);
+        }
+
+        // Initialize Charts with Chart.js
+        function initCharts() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#cbd5e1' : '#475569';
+
+            // Status Chart (Doughnut)
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            statusChartInstance = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ยังไม่เริ่ม', 'กำลังทำ', 'เสร็จสิ้น'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: textColor, font: { family: 'Kanit', size: 12 } }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Category Chart (Bar)
+            const ctxCategory = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctxCategory, {
+                type: 'bar',
+                data: {
+                    labels: ['Frontend', 'Backend', 'UI/UX', 'Database', 'Docs'],
+                    datasets: [{
+                        label: 'จำนวนงาน',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, font: { family: 'Kanit' } }, grid: { display: false } },
+                        y: { ticks: { color: textColor, stepSize: 1, precision: 0, font: { family: 'Kanit' } }, grid: { color: isDark ? '#334155' : '#e2e8f0' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Update Chart Data Dynamically
+        function updateCharts(pending, inProgress, completed) {
+            if (statusChartInstance) {
+                statusChartInstance.data.datasets[0].data = [pending, inProgress, completed];
+                statusChartInstance.update();
+            }
+
+            if (categoryChartInstance) {
+                const categories = ['Frontend', 'Backend', 'UI/UX', 'Database', 'Docs'];
+                const catCounts = categories.map(cat => tasks.filter(t => t.category === cat).length);
+                categoryChartInstance.data.datasets[0].data = catCounts;
+                categoryChartInstance.update();
+            }
+        }
+
+        // Update Theme Colors in Charts
+        function updateChartsTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#cbd5e1' : '#475569';
+
+            if (statusChartInstance) {
+                statusChartInstance.options.plugins.legend.labels.color = textColor;
+                statusChartInstance.update();
+            }
+
+            if (categoryChartInstance) {
+                categoryChartInstance.options.scales.x.ticks.color = textColor;
+                categoryChartInstance.options.scales.y.ticks.color = textColor;
+                categoryChartInstance.options.scales.y.grid.color = isDark ? '#334155' : '#e2e8f0';
+                categoryChartInstance.update();
+            }
+        }
+
+        // Render Task List
+        function renderTasks() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filterStatus = document.getElementById('filterStatus').value;
+            const filterCategory = document.getElementById('filterCategory').value;
+            const filterPriority = document.getElementById('filterPriority').value;
+
+            const listContainer = document.getElementById('taskList');
+            const emptyState = document.getElementById('emptyState');
+
+            const filtered = tasks.filter(task => {
+                const matchSearch = task.title.toLowerCase().includes(search) || (task.description && task.description.toLowerCase().includes(search));
+                const matchStatus = filterStatus === 'all' || task.status === filterStatus;
+                const matchCategory = filterCategory === 'all' || task.category === filterCategory;
+                const matchPriority = filterPriority === 'all' || task.priority === filterPriority;
+                return matchSearch && matchStatus && matchCategory && matchPriority;
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            listContainer.innerHTML = filtered.map(task => {
+                let statusBadge = '';
+                if (task.status === 'Completed') {
+                    statusBadge = '<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-xs px-2.5 py-1 rounded-full font-medium"><i class="fa-solid fa-check mr-1"></i>เสร็จสิ้น</span>';
+                } else if (task.status === 'In Progress') {
+                    statusBadge = '<span class="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-xs px-2.5 py-1 rounded-full font-medium"><i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลังทำ</span>';
+                } else {
+                    statusBadge = '<span class="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 rounded-full font-medium"><i class="fa-regular fa-clock mr-1"></i>ยังไม่เริ่ม</span>';
+                }
+
+                let priorityBadge = '';
+                if (task.priority === 'High') {
+                    priorityBadge = '<span class="text-rose-500 font-medium text-xs bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-lg">High</span>';
+                } else if (task.priority === 'Medium') {
+                    priorityBadge = '<span class="text-amber-500 font-medium text-xs bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg">Medium</span>';
+                } else {
+                    priorityBadge = '<span class="text-slate-500 font-medium text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">Low</span>';
+                }
+
+                return `
+                    <div class="p-4 sm:p-5 hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start space-x-3.5 flex-1">
+                            <button onclick="toggleTaskStatus('${task.id}')" class="mt-0.5 text-xl transition text-slate-300 dark:text-slate-600 hover:text-emerald-500 dark:hover:text-emerald-400">
+                                ${task.status === 'Completed' 
+                                    ? '<i class="fa-solid fa-circle-check text-emerald-500"></i>' 
+                                    : '<i class="fa-regular fa-circle"></i>'}
+                            </button>
+                            <div class="space-y-1 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h4 class="font-medium text-sm sm:text-base ${task.status === 'Completed' ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-white'}">
+                                        ${escapeHtml(task.title)}
+                                    </h4>
+                                    <span class="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 text-xs px-2 py-0.5 rounded-md font-medium border border-indigo-100 dark:border-indigo-900">
+                                        ${task.category}
+                                    </span>
+                                    ${priorityBadge}
+                                </div>
+                                ${task.description ? `<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
+                                <div class="flex items-center space-x-4 text-xs text-slate-400 pt-1">
+                                    ${task.dueDate ? `<span><i class="fa-regular fa-calendar mr-1"></i>กำหนดส่ง: ${task.dueDate}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/50">
+                            <div>${statusBadge}</div>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="openTaskModal('${task.id}')" class="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg" title="แก้ไข">
+                                    <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                </button>
+                                <button onclick="deleteTask('${task.id}')" class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg" title="ลบ">
+                                    <i class="fa-solid fa-trash-can text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Toggle Task Complete / Incomplete Status
+        function toggleTaskStatus(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.status = task.status === 'Completed' ? 'In Progress' : 'Completed';
+                saveTasks();
+                renderTasks();
+                showToast(task.status === 'Completed' ? 'ทำรายการงานเสร็จสมบูรณ์แล้ว!' : 'เปลี่ยนสถานะเป็นกำลังดำเนินการ');
+            }
+        }
+
+        // Task Modal Controls
+        function openTaskModal(taskId = null) {
+            const modal = document.getElementById('taskModal');
+            const form = document.getElementById('taskForm');
+            const title = document.getElementById('modalTitle');
+
+            form.reset();
+
+            if (taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task) {
+                    title.innerText = 'แก้ไขรายการงาน';
+                    document.getElementById('taskId').value = task.id;
+                    document.getElementById('taskTitle').value = task.title;
+                    document.getElementById('taskCategory').value = task.category;
+                    document.getElementById('taskPriority').value = task.priority;
+                    document.getElementById('taskStatus').value = task.status;
+                    document.getElementById('taskDueDate').value = task.dueDate || '';
+                    document.getElementById('taskDescription').value = task.description || '';
+                }
+            } else {
+                title.innerText = 'เพิ่มงานใหม่';
+                document.getElementById('taskId').value = '';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.add('hidden');
+        }
+
+        // Form Submit Handler
+        function handleTaskFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('taskId').value;
+            const title = document.getElementById('taskTitle').value;
+            const category = document.getElementById('taskCategory').value;
+            const priority = document.getElementById('taskPriority').value;
+            const status = document.getElementById('taskStatus').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            const description = document.getElementById('taskDescription').value;
+
+            if (id) {
+                // Update Existing
+                const index = tasks.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    tasks[index] = { ...tasks[index], title, category, priority, status, dueDate, description };
+                    showToast('อัปเดตข้อมูลงานเรียบร้อยแล้ว');
+                }
+            } else {
+                // Create New
+                const newTask = {
+                    id: Date.now().toString(),
+                    title,
+                    category,
+                    priority,
+                    status,
+                    dueDate,
+                    description
+                };
+                tasks.unshift(newTask);
+                showToast('เพิ่มงานใหม่เรียบร้อยแล้ว');
+            }
+
+            saveTasks();
+            renderTasks();
+            closeTaskModal();
+        }
+
+        // Delete Task
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasks();
+            renderTasks();
+            showToast('ลบรายการงานเรียบร้อยแล้ว');
+        }
+
+        // Submission Info Modal Controls
+        function openSubmissionInfoModal() {
+            document.getElementById('submissionModal').classList.remove('hidden');
+        }
+
+        function closeSubmissionModal() {
+            document.getElementById('submissionModal').classList.add('hidden');
+        }
+
+        // Copy Field Value Utility
+        function copyField(fieldId) {
+            const input = document.getElementById(fieldId);
+            if (!input || !input.value) {
+                showToast('ไม่มีข้อมูลให้คัดลอก');
+                return;
+            }
+
+            input.select();
+            document.execCommand('copy');
+
+            const toast = document.getElementById('copyToast');
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+
+        // Export Data JSON
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `mini_project_planner_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('ส่งออกไฟล์ข้อมูล JSON สำเร็จ');
+        }
+
+        // Import Data JSON
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedTasks = JSON.parse(e.target.result);
+                    if (Array.isArray(importedTasks)) {
+                        tasks = importedTasks;
+                        saveTasks();
+                        renderTasks();
+                        showToast('นำเข้าข้อมูลเรียบร้อยแล้ว');
+                    } else {
+                        showToast('รูปแบบไฟล์ JSON ไม่ถูกต้อง');
+                    }
+                } catch (err) {
+                    showToast('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Reset Data to Default Mock
+        function resetDataToDefault() {
+            tasks = [...initialTasks];
+            saveTasks();
+            renderTasks();
+            showToast('รีเซ็ตข้อมูลตัวอย่างเรียบร้อยแล้ว');
+        }
+
+        // Toast Notification System
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            const msgSpan = document.getElementById('toastMessage');
+            msgSpan.innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Helper: Escape HTML to avoid XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
